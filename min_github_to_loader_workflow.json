@@ -1,0 +1,180 @@
+{
+  "name": "Minimal: GitHub Get File \u2192 Data Loader \u2192 (Splitter) \u2192 Embeddings",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "owner",
+              "value": "OWNER"
+            },
+            {
+              "name": "repo",
+              "value": "REPO"
+            },
+            {
+              "name": "branch",
+              "value": "main"
+            },
+            {
+              "name": "path",
+              "value": "PATH/TO/FILE.docx"
+            }
+          ]
+        }
+      },
+      "id": "2",
+      "name": "Set Repo Info",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "owner": "={{$json.owner}}",
+        "repository": "={{$json.repo}}",
+        "additionalFields": {
+          "branch": "={{$json.branch}}",
+          "asBinaryProperty": true,
+          "binaryPropertyName": "data",
+          "filePath": "={{$json.path}}"
+        }
+      },
+      "id": "3",
+      "name": "GitHub: Get a file",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        -20
+      ],
+      "notes": "Requires GitHub credentials"
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "binaryProperty": "data",
+        "loader": "docxLoader",
+        "options": {
+          "metadata": {
+            "owner": "={{$json.owner}}",
+            "repo": "={{$json.repo}}",
+            "path": "={{$json.path}}",
+            "branch": "={{$json.branch}}"
+          }
+        }
+      },
+      "id": "4",
+      "name": "Default Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        40,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "splitType": "recursive",
+        "chunkSize": 1400,
+        "chunkOverlap": 200
+      },
+      "id": "5",
+      "name": "AI Document Splitter",
+      "type": "@n8n/n8n-nodes-langchain.documentSplitter",
+      "typeVersion": 1.1,
+      "position": [
+        260,
+        -20
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "6",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        480,
+        -20
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Repo Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Repo Info": {
+      "main": [
+        [
+          {
+            "node": "GitHub: Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub: Get a file": {
+      "main": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "AI Document Splitter",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Document Splitter": {
+      "ai_document": [
+        [
+          {
+            "node": "Embeddings OpenAI",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "import-me"
+  }
+}
